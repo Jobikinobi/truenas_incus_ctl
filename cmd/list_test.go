@@ -141,3 +141,27 @@ func TestGenericListOrder(t *testing.T) {
 		"dozer/testing/test5@readonly\n",
 	))
 }
+
+// TrueNAS 26+: snapshot query omits clones, so they are derived from dataset origins.
+func TestGenericListClonesFromOrigin(t *testing.T) {
+	FailIf(t, DoTest(
+		t,
+		listCmd,
+		doList,
+		map[string]interface{}{"types":"vol,snap","no-headers":true,"parsable":true,"output":"type,id,clones"},
+		[]string{},
+		[]string{ // expected
+			"[[],{\"extra\":{\"flat\":false,\"properties\":[\"type\",\"id\",\"clones\"],\"retrieve_children\":true,\"user_properties\":false}}]",
+			"[[],{\"extra\":{\"flat\":false,\"properties\":[\"type\",\"id\",\"clones\",\"createtxg\"],\"retrieve_children\":true,\"user_properties\":false}}]",
+			"[{\"get_children\":true,\"paths\":[\"dozer\"],\"properties\":[\"origin\"]}]",
+		},
+		[]string{ // response
+			"{\"jsonrpc\":\"2.0\",\"result\":[{\"id\":\"dozer/testing/test5\",\"name\":\"dozer/testing/test5\",\"type\":\"volume\"}],\"id\":2}",
+			"{\"jsonrpc\":\"2.0\",\"result\":[{\"id\":\"dozer/testing/test4@readonly\",\"name\":\"dozer/testing/test4@readonly\",\"properties\":{},\"type\":\"snapshot\"}],\"id\":2}",
+			"{\"jsonrpc\":\"2.0\",\"result\":[{\"name\":\"dozer/testing/test5\",\"properties\":{\"origin\":{\"value\":\"dozer/testing/test4@readonly\"}}},"+
+				"{\"name\":\"dozer/testing/test4\",\"properties\":{\"origin\":{\"value\":null}}}],\"id\":2}",
+		},
+		"snapshot\tdozer/testing/test4@readonly\tdozer/testing/test5\n"+
+		"volume\tdozer/testing/test5\t-\n",
+	))
+}

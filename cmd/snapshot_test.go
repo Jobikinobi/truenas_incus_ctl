@@ -75,7 +75,7 @@ func TestSnapshotDeleteBulk(t *testing.T) {
 		deleteOrRollbackSnapshot,
 		map[string]interface{}{},
 		[]string{"dozer/testing/test3@readonly","dozer/testing/test4@readonly"},
-		"[\"zfs.snapshot.delete\",[[\"dozer/testing/test3@readonly\",{}],[\"dozer/testing/test4@readonly\",{}]]]",
+		"[\"pool.snapshot.delete\",[[\"dozer/testing/test3@readonly\",{}],[\"dozer/testing/test4@readonly\",{}]]]",
 	))
 }
 
@@ -236,7 +236,7 @@ func TestSnapshotRename(t *testing.T) {
 		renameSnapshot,
 		map[string]interface{}{},
 		[]string{"dozer/testing/test@readonly", "dozer/testing/test@renamed-readonly"},
-		"[\"dozer/testing/test@readonly\",\"dozer/testing/test@renamed-readonly\"]",
+		"[{\"current_name\":\"dozer/testing/test@readonly\",\"new_name\":\"dozer/testing/test@renamed-readonly\"}]",
 	))
 }
 
@@ -247,7 +247,7 @@ func TestSnapshotRenameShorthand(t *testing.T) {
 		renameSnapshot,
 		map[string]interface{}{},
 		[]string{"dozer/testing/test@readonly", "renamed-readonly"},
-		"[\"dozer/testing/test@readonly\",\"dozer/testing/test@renamed-readonly\"]",
+		"[{\"current_name\":\"dozer/testing/test@readonly\",\"new_name\":\"dozer/testing/test@renamed-readonly\"}]",
 	))
 }
 

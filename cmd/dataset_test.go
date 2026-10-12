@@ -261,7 +261,7 @@ func TestDatasetRename(t *testing.T) {
 		renameDataset,
 		map[string]interface{}{},
 		[]string{"dozer/testing/test", "dozer/testing/test3"},
-		"[\"dozer/testing/test\",{\"new_name\":\"dozer/testing/test3\"}]",
+		"[\"dozer/testing/test\",{\"force\":true,\"new_name\":\"dozer/testing/test3\"}]",
 	))
 }
 
@@ -273,7 +273,7 @@ func TestDatasetRenameUpdateShares(t *testing.T) {
 		map[string]interface{}{"update-shares":true},
 		[]string{"dozer/testing/test", "dozer/testing/test3"},
 		[]string{ // expect
-			"[\"dozer/testing/test\",{\"new_name\":\"dozer/testing/test3\"}]",
+			"[\"dozer/testing/test\",{\"force\":true,\"new_name\":\"dozer/testing/test3\"}]",
 			"[[[\"path\",\"in\",[\"/mnt/dozer/testing/test\"]]]]",
 			"[1,{\"path\":\"/mnt/dozer/testing/test3\"}]",
 		},

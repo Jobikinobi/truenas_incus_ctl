@@ -140,12 +140,70 @@ func QueryApi(api core.Session, category string, entries, entryTypes, propsList 
 		}
 	}
 
+	if endpoint == "pool.snapshot.query" && slices.Contains(propsList, "clones") {
+		if err := fillSnapshotClones(api, outputMap); err != nil {
+			return response, err
+		}
+	}
+
 	response = typeQueryResponse{
 		resultsMap: outputMap,
 		intKeys:    outputMapIntKeys,
 		strKeys:    outputMapStrKeys,
 	}
 	return response, nil
+}
+
+// TrueNAS 26+ snapshot queries silently drop the "clones" property, so derive it from
+// every dataset's "origin" in the same pool. Incus checks clones before deleting snapshots.
+func fillSnapshotClones(api core.Session, snapshots map[string]map[string]interface{}) error {
+	for _, dict := range snapshots {
+		if _, native := dict["clones"]; native {
+			return nil // pre-26 servers still report clones themselves
+		}
+	}
+
+	pools := []string{}
+	for id := range snapshots {
+		pool := strings.SplitN(strings.SplitN(id, "@", 2)[0], "/", 2)[0]
+		if !slices.Contains(pools, pool) {
+			pools = append(pools, pool)
+		}
+	}
+	if len(pools) == 0 {
+		return nil
+	}
+
+	params := []interface{}{map[string]interface{}{"paths": pools, "properties": []string{"origin"}, "get_children": true}}
+	data, err := core.ApiCall(api, "zfs.resource.query", defaultCallTimeout, params)
+	if err != nil {
+		return err
+	}
+
+	var resp struct {
+		Result []struct {
+			Name       string `json:"name"`
+			Properties map[string]struct {
+				Value *string `json:"value"`
+			} `json:"properties"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return fmt.Errorf("zfs.resource.query response: %v", err)
+	}
+
+	clones := map[string][]string{}
+	for _, ds := range resp.Result {
+		if o := ds.Properties["origin"].Value; o != nil && *o != "" {
+			clones[*o] = append(clones[*o], ds.Name)
+		}
+	}
+	for id, dict := range snapshots {
+		if c := clones[id]; len(c) > 0 {
+			dict["clones"] = strings.Join(c, ",")
+		}
+	}
+	return nil
 }
 
 func MergeResponseInto(dst *typeQueryResponse, src *typeQueryResponse) {

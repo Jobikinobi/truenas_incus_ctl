@@ -114,7 +114,7 @@ func cloneSnapshot(cmd *cobra.Command, api core.Session, args []string) error {
 	params := []interface{}{outMap}
 	DebugJson(params)
 
-	out, err := core.ApiCall(api, "zfs.snapshot.clone", defaultCallTimeout, params)
+	out, err := core.ApiCall(api, "pool.snapshot.clone", defaultCallTimeout, params)
 	if err != nil {
 		return err
 	}
@@ -171,11 +171,11 @@ func createSnapshot(cmd *cobra.Command, api core.Session, args []string) error {
 		delMap := make(map[string]interface{})
 		delMap["recursive"] = true
 		delObjRemap := map[string][]interface{}{"": core.ToAnyArray(args)}
-		_, _, _ = MaybeBulkApiCall(api, "zfs.snapshot.delete", 10, []interface{}{args[0], delMap}, delObjRemap, true)
+		_, _, _ = MaybeBulkApiCall(api, "pool.snapshot.delete", 10, []interface{}{args[0], delMap}, delObjRemap, true)
 	}
 
 	objRemap := map[string][]interface{}{"dataset": core.ToAnyArray(datasetList), "name": core.ToAnyArray(nameList)}
-	out, _, err := MaybeBulkApiCall(api, "zfs.snapshot.create", 10, params, objRemap, false)
+	out, _, err := MaybeBulkApiCall(api, "pool.snapshot.create", 10, params, objRemap, false)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func deleteOrRollbackSnapshot(cmd *cobra.Command, api core.Session, args []strin
 	cmd.SilenceUsage = true
 
 	objRemap := map[string][]interface{}{"": core.ToAnyArray(snapshots)}
-	out, _, err := MaybeBulkApiCall(api, "zfs.snapshot."+cmdType, 10, params, objRemap, false)
+	out, _, err := MaybeBulkApiCall(api, "pool.snapshot."+cmdType, 10, params, objRemap, false)
 	if err != nil {
 		return err
 	}
@@ -233,10 +233,12 @@ func renameSnapshot(cmd *cobra.Command, api core.Session, args []string) error {
 				"Try leaving out the dataset name in the destination.")
 	}
 
-	params := []interface{}{source, dest}
+	// TrueNAS 26+: zfs.snapshot.rename is gone, and pool.snapshot.rename routes to
+	// zfs.resource.rename which rejects snapshots, so call the snapshot-specific method.
+	params := []interface{}{map[string]interface{}{"current_name": source, "new_name": dest}}
 	DebugJson(params)
 
-	out, err := core.ApiCall(api, "zfs.snapshot.rename", defaultCallTimeout, params)
+	out, err := core.ApiCall(api, "zfs.resource.snapshot.rename", defaultCallTimeout, params)
 	if err != nil {
 		return err
 	}
@@ -272,7 +274,7 @@ func listSnapshot(cmd *cobra.Command, api core.Session, args []string) error {
 		shouldRecurse:      len(args) == 0 || core.IsStringTrue(options.allFlags, "recursive"),
 	}
 
-	response, err := QueryApi(api, "zfs.snapshot", args, idTypes, properties, extras)
+	response, err := QueryApi(api, "pool.snapshot", args, idTypes, properties, extras)
 	if err != nil {
 		return err
 	}

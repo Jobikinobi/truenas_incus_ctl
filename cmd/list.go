@@ -203,7 +203,7 @@ func doList(cmd *cobra.Command, api core.Session, args []string) error {
 		case "dataset":
 			category = "pool.dataset"
 		case "snapshot":
-			category = "zfs.snapshot"
+			category = "pool.snapshot"
 		case "nfs":
 			category = "sharing.nfs"
 		}

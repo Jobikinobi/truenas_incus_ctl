@@ -479,11 +479,12 @@ func renameDataset(cmd *cobra.Command, api core.Session, args []string) error {
 
 	outMap := make(map[string]interface{})
 	outMap["new_name"] = dest
+	outMap["force"] = true // pool.dataset.rename refuses without it; Incus owns these names
 
 	params := []interface{}{source, outMap}
 	DebugJson(params)
 
-	out, err := core.ApiCall(api, "zfs.dataset.rename", defaultCallTimeout, params)
+	out, err := core.ApiCall(api, "pool.dataset.rename", defaultCallTimeout, params)
 	if err != nil {
 		return err
 	}
