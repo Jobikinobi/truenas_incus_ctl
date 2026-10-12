@@ -368,7 +368,7 @@ func deleteDataset(cmd *cobra.Command, api core.Session, args []string) error {
 	cmd.SilenceUsage = true
 
 	options, _ := GetCobraFlags(cmd, false, nil)
-	timeout := int64(20)
+	timeout := int64(120) // zvol destroy on TrueNAS 26+ routinely takes >20s; timing out leaves Incus out of sync
 
 	if core.IsStringTrue(options.allFlags, "no_smart_timeout") {
 		RemoveFlag(options, "no_smart_timeout")
@@ -383,7 +383,7 @@ func deleteDataset(cmd *cobra.Command, api core.Session, args []string) error {
 		if err != nil {
 			return err
 		}
-		timeout = int64(10 + 10*len(response.resultsMap))
+		timeout = int64(120 + 10*len(response.resultsMap))
 	}
 
 	params := BuildNameStrAndPropertiesJson(options, args[0])
